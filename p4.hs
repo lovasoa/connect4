@@ -80,12 +80,12 @@ negaMax color d dmax grid =
   let nextCol = otherColor color
       playit  = flip (play color) grid
   in
-    maximum (map (((-1)*).(negaMax nextCol dmax (d+1)).playit) (legalMoves grid))
+    maximum (map (((-1)*).(negaMax nextCol (d+1) dmax).playit) (legalMoves grid))
 
 aimove::Color->Grid->Int
 aimove color grid = fst $ maximumBy (compare `on` snd)
                             (map
-                              (\m -> (m, -1 * (negaMax color 0 0 (play color m grid))))
+                              (\m -> (m, -1 * (negaMax color 0 1 (play color m grid))))
                               (legalMoves grid))
 
 initial::Grid
