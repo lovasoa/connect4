@@ -73,20 +73,20 @@ evaluate = sum.(map (\(c,num) ->
                   Empty -> 0
             )).summarizeGrid
 
-negaMax::Color->Int->Int->Grid->(Int,Int)
-negaMax color depthMax depth grid | depthMax == depth =
-  let evaluation = (if color==Red then 1 else -1) * (evaluate grid) in
-    (evaluation, 0)
+negaMax::Color->Int->Int->Grid -> Int
+negaMax color d dmax grid | dmax == d = (if color==Orange then 1 else -1) * (evaluate grid)
 
-negaMax color depthMax depth grid =
+negaMax color d dmax grid =
   let nextCol = otherColor color
       playit  = flip (play color) grid
   in
-    maximumBy (compare `on` fst) 
-      (map (\move ->
-              let negMaxVal = fst$(negaMax nextCol depthMax (depth+1))$playit move in
-              (-1 * negMaxVal, move))
-          (legalMoves grid))
+    maximum (map (((-1)*).(negaMax nextCol dmax (d+1)).playit) (legalMoves grid))
+
+aimove::Color->Grid->Int
+aimove color grid = fst $ maximumBy (compare `on` snd)
+                            (map
+                              (\m -> (m, -1 * (negaMax color 0 0 (play color m grid))))
+                              (legalMoves grid))
 
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
@@ -100,7 +100,7 @@ data Human = Human Color
 data Computer = Computer Color
 
 instance Contestant Computer where
-  move (Computer col) grid = return$snd$negaMax col 0 5 grid
+  move  (Computer col) grid = return$aimove col grid
   color (Computer col) = col
 
 instance Contestant Human where
@@ -118,11 +118,11 @@ instance Contestant Human where
 
 loop::(Contestant a,Contestant b)=>Grid->a->b->IO()
 loop grid a b = do
+  putStrLn $ showGrid grid
   amove <- move a grid
   let newgrid = play (color a) amove grid in do
-    putStrLn $ showGrid grid
-    case won grid of
-      Just color -> putStrLn (show color ++ "won !")
+    case won newgrid of
+      Just color -> putStrLn (showGrid newgrid ++ "\n" ++ show color ++ "won !")
       Nothing    -> loop newgrid b a
 
 
@@ -132,7 +132,5 @@ main = do
   hSetBuffering stdin NoBuffering
   -- désactive l'écho du caractère entré sur le terminal
   hSetEcho stdin False
-  -- affiche la grille initiale
-  putStr $ showGrid initial
   -- lance la REPL
   loop initial ( Human Red ) ( Computer Orange )
