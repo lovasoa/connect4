@@ -12,11 +12,11 @@ data Color = Red | Orange deriving (Eq)
 data Cell  = Empty | Full(Color) deriving (Eq)
 
 instance Show Color where
-  show Red = " R "
-  show Orange = " O "
+  show Red = " 🌑 "
+  show Orange = " 🌕 "
 
 instance Show Cell where
-  show Empty   = " E "
+  show Empty   = " ⬜ "
   show (Full c) = show c
 
 type Column = [Cell]
@@ -87,7 +87,7 @@ negaMax color d dmax grid =
 aimove::Color->Grid->Int
 aimove color grid = fst $ maximumBy (compare `on` snd)
                             (map
-                              (\m -> (m, -(negaMax (otherColor color) 0 1 (play color m grid))))
+                              (\m -> (m, -(negaMax (otherColor color) 0 3 (play color m grid))))
                               (legalMoves grid))
 
 initial::Grid
