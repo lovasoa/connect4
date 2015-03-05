@@ -55,9 +55,11 @@ won grid = listToMaybe $ catMaybes $
           concatMap (\f -> map columnWon (f grid))
                     [getDiagonals, getDiagonals.(map reverse), id, transpose]
 
+legalMoves::Grid -> [Int]
+legalMoves g = map fst (filter ((==Empty).head.snd) (zip [0..] g))
 
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
 
-main = let playr0 = play Red 0 in
-          print $ won $ (foldr (.) id (replicate 4 playr0)) initial
+main = let playr0 = play Red 2 in
+          print $ legalMoves $ (foldr (.) id (replicate 5 playr0)) initial
