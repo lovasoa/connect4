@@ -123,7 +123,16 @@ loop grid a b = do
     putStrLn $ showGrid grid
     case won grid of
       Just color -> putStrLn (show color ++ "won !")
-      Nothing    -> loop grid b a
+      Nothing    -> loop newgrid b a
 
-main = let playr0 = play Red 2 in
-          print $ evaluate $ (foldr (.) id (replicate 5 playr0)) initial
+
+main :: IO () -- Point d'entrée dans le programme
+main = do
+  -- désactive l'attente de la touche entrée pour l'acquisition
+  hSetBuffering stdin NoBuffering
+  -- désactive l'écho du caractère entré sur le terminal
+  hSetEcho stdin False
+  -- affiche la grille initiale
+  putStr $ showGrid initial
+  -- lance la REPL
+  loop initial ( Human Red ) ( Computer Orange )
