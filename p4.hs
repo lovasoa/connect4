@@ -1,4 +1,7 @@
 import Data.List
+import Data.Maybe
+
+wonAt = 4
 
 data Color = Red | Orange deriving (Eq)
 data Cell  = Empty | Full(Color) deriving (Eq)
@@ -21,8 +24,8 @@ addToken:: Color -> Column -> Column
 addToken color column = let (empties,fulls) = span (==Empty) column in
                           tail (empties ++ [Full color] ++ fulls) 
 
-play::Grid->Color->Int->Grid
-play g color numCol = let (prev,nexts) = splitAt numCol g in
+play::Color->Int->Grid->Grid
+play color numCol g = let (prev,nexts) = splitAt numCol g in
                         prev ++ [addToken color (head nexts)] ++ (tail nexts)
 
 summarize::Column->[(Cell,Int)]
@@ -33,17 +36,28 @@ summarize col = let (firsts,lasts) = span (==(head col)) col in
 size:: Grid -> (Int, Int)
 size g = (length g, length $ head g)
 
-enumerate:: Grid -> [((Int, Int), Cell)]
-enumerate g = concat $ map (\(n, li) -> map (\(m, x) -> ((n,m),x)) (zip [0..] li)) (zip [0..] g)
-
 getDiagonal::Grid->Int->Column
-getDiagonal g numDiag = map snd $ filter (\((l,c),v) -> l+c == numDiag) (enumerate g)
+getDiagonal grid numDiag = [grid!!i!!j |
+                              i<-[0..(fst$size grid)-1], j<-[0..(snd$size grid)-1],
+                              i+j==numDiag]
 
 getDiagonals:: Grid->Grid
 getDiagonals grid = takeWhile (not.null) (map (getDiagonal grid) [0..])
+
+columnWon:: Column -> Maybe Color
+columnWon = listToMaybe.
+            (map (\(Full x,n) -> x)).
+            (filter (\(v,num) -> v/=Empty && num>=wonAt)).
+            summarize
+
+won:: Grid->Maybe Color
+won grid = listToMaybe $ catMaybes $
+          concatMap (\f -> map columnWon (f grid))
+                    [getDiagonals, getDiagonals.(map reverse), id, transpose]
 
 
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
 
-main = print $ getDiagonals $ (play initial Red 0)
+main = let playr0 = play Red 0 in
+          print $ won $ (foldr (.) id (replicate 4 playr0)) initial
