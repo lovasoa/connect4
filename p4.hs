@@ -81,13 +81,14 @@ evaluate = sum.(map (\(c,num) ->
             )).summarizeGrid
 
 negaMax::Color->Int->Int->Grid -> Int
-negaMax color d dmax grid | dmax == d = (if color==Red then 1 else -1) * (evaluate grid)
+negaMax color d dmax grid | dmax == d =
+  (if color==Red then 1 else -1) * (evaluate grid)
 
 negaMax color d dmax grid =
   let nextCol = otherColor color
       playit  = flip (play color) grid
   in
-    maximum (map (((-1)*).(negaMax nextCol (d+1) dmax).playit) (legalMoves grid))
+    maximum (map ((0-).(negaMax nextCol (d+1) dmax).playit) (legalMoves grid))
 
 aimove::Color->Grid->Int
 aimove color grid = fst $ maximumBy (compare `on` snd)
@@ -125,12 +126,15 @@ instance Contestant Human where
 
 loop::(Contestant a,Contestant b)=>Grid->a->b->IO()
 loop grid a b = do
-  putStrLn $ showGrid grid
-  amove <- move a grid
-  let newgrid = play (color a) amove grid in do
-    case won newgrid of
-      Just color -> putStrLn (showGrid newgrid ++ "\n" ++ show color ++ "won !")
-      Nothing    -> loop newgrid b a
+  if null $ legalMoves grid then
+    putStrLn "Ex-aequo"
+  else do
+    putStrLn $ showGrid grid
+    amove <- move a grid
+    let newgrid = play (color a) amove grid in do
+      case won newgrid of
+        Just color -> putStrLn (showGrid newgrid ++ "\n" ++ show color ++ "won !")
+        Nothing    -> loop newgrid b a
 
 
 main :: IO () -- Point d'entrée dans le programme
@@ -140,4 +144,4 @@ main = do
   -- désactive l'écho du caractère entré sur le terminal
   hSetEcho stdin False
   -- lance la REPL
-  loop initial ( Human Red ) ( Computer Orange )
+  loop initial ( Human Orange ) ( Computer Red )
