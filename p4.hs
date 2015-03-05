@@ -74,14 +74,14 @@ legalMoves g = map fst (filter ((==Empty).head.snd) (zip [0..] g))
 
 evaluate:: Grid -> Int
 evaluate = sum.(map (\(c,num) -> 
-                10 ^ num * case c of
+                100 ^ num * case c of
                   Full Red -> 1
                   Full Orange -> -1
                   Empty -> 0
             )).summarizeGrid
 
 negaMax::Color->Int->Int->Grid -> Int
-negaMax color d dmax grid | dmax == d =
+negaMax color d dmax grid | dmax == d || (isJust $ won grid) =
   (if color==Red then 1 else -1) * (evaluate grid)
 
 negaMax color d dmax grid =
@@ -93,7 +93,7 @@ negaMax color d dmax grid =
 aimove::Color->Grid->Int
 aimove color grid = fst $ maximumBy (compare `on` snd)
                             (map
-                              (\m -> (m, -(negaMax (otherColor color) 0 3 (play color m grid))))
+                              (\m -> (m, -(negaMax (otherColor color) 0 4 (play color m grid))))
                               (legalMoves grid))
 
 initial::Grid
