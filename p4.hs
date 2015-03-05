@@ -58,11 +58,17 @@ won = listToMaybe.
 legalMoves::Grid -> [Int]
 legalMoves g = map fst (filter ((==Empty).head.snd) (zip [0..] g))
 
---evaluate:: Grid -> Int
+evaluate:: Grid -> Int
+evaluate = sum.(map (\(c,num) -> 
+                100 ^ num * case c of
+                  Full Red -> 1
+                  Full Orange -> -1
+                  Empty -> 0
+            )).summarizeGrid
 
 
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
 
 main = let playr0 = play Red 2 in
-          print $ won $ (foldr (.) id (replicate 5 playr0)) initial
+          print $ evaluate $ (foldr (.) id (replicate 5 playr0)) initial
