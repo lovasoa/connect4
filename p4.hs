@@ -15,12 +15,14 @@ type Column = [Cell]
 type Grid   = [Column]
 
 showGrid:: Grid -> String
-showGrid g = tail $ concatMap (('\n' :) . (concatMap show)) (transpose g)
+showGrid g = unlines $ map (concatMap show) (transpose g)
 
 addToken:: Color -> Column -> Column
 addToken color column = let (empties,fulls) = span (==Empty) column in
                           tail (empties ++ [Full color] ++ fulls) 
 
+--play::Grid->Color->Int->Grid
+--play g color numCol = zip 
 
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
