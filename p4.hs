@@ -30,7 +30,20 @@ summarize []  = []
 summarize col = let (firsts,lasts) = span (==(head col)) col in
                   (head col, length firsts) : summarize lasts
 
+size:: Grid -> (Int, Int)
+size g = (length g, length $ head g)
+
+enumerate:: Grid -> [((Int, Int), Cell)]
+enumerate g = concat $ map (\(n, li) -> map (\(m, x) -> ((n,m),x)) (zip [0..] li)) (zip [0..] g)
+
+getDiagonal::Grid->Int->Column
+getDiagonal g numDiag = map snd $ filter (\((l,c),v) -> l+c == numDiag) (enumerate g)
+
+getDiagonals:: Grid->Grid
+getDiagonals grid = takeWhile (not.null) (map (getDiagonal grid) [0..])
+
+
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
 
-main = print $ summarize $ head $ play initial Red 0
+main = print $ getDiagonals $ (play initial Red 0)
