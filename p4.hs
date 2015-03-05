@@ -28,7 +28,12 @@ otherColor Red = Orange
 otherColor Orange = Red
 
 showGrid:: Grid -> String
-showGrid g = unlines $ map (concatMap show) (transpose g)
+showGrid g = unlines $ (map (concatMap show) (transpose g) ++ [showColNums g])
+
+showColNums:: Grid -> String
+showColNums grid = let legals = legalMoves grid in
+                       concatMap (\x -> if x `elem` legals then " "++show x++" " else "   ")
+                           [0..length grid]
 
 addToken:: Color -> Column -> Column
 addToken color column = let (empties,fulls) = span (==Empty) column in
