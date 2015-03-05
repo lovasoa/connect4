@@ -1,5 +1,6 @@
 import Data.List
 import Data.Maybe
+import Data.Function
 
 wonAt = 4
 
@@ -17,6 +18,10 @@ instance Show Cell where
 type Column = [Cell]
 type Grid   = [Column]
 type Summary = [(Cell, Int)]
+
+otherColor:: Color -> Color
+otherColor Red = Orange
+otherColor Orange = Red
 
 showGrid:: Grid -> String
 showGrid g = unlines $ map (concatMap show) (transpose g)
@@ -66,6 +71,20 @@ evaluate = sum.(map (\(c,num) ->
                   Empty -> 0
             )).summarizeGrid
 
+negaMax::Color->Int->Int->Grid->(Int,Int)
+negaMax color depthMax depth grid | depthMax == depth =
+  let evaluation = (if color==Red then 1 else -1) * (evaluate grid) in
+    (evaluation, 0)
+
+negaMax color depthMax depth grid =
+  let nextCol = otherColor color
+      playit  = flip (play color) grid
+  in
+    maximumBy (compare `on` fst) 
+      (map (\move ->
+              let negMaxVal = fst$(negaMax nextCol depthMax (depth+1))$playit move in
+              (-1 * negMaxVal, move))
+          (legalMoves grid))
 
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
