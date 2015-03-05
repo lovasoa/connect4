@@ -1,6 +1,7 @@
 import Data.List
 import Data.Maybe
 import Data.Function
+import Data.Char
 import System.IO
 
 wonAt = 4
@@ -99,9 +100,20 @@ data Human = Human Color
 data Computer = Computer Color
 
 instance Contestant Computer where
-  move comp grid = return$snd$negaMax Red 0 5 grid
-  color comp = Red
+  move (Computer col) grid = return$snd$negaMax col 0 5 grid
+  color (Computer col) = col
 
+instance Contestant Human where
+  move hum grid = do
+    moveChar <- getChar
+    let moveInt = digitToInt moveChar in
+      if moveInt `elem` (legalMoves grid) then
+        return moveInt
+      else do
+        putStrLn "Wrong move!"
+        move hum grid
+
+  color (Human col) = col
 
 main = let playr0 = play Red 2 in
           print $ evaluate $ (foldr (.) id (replicate 5 playr0)) initial
