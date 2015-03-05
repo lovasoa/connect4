@@ -16,6 +16,7 @@ instance Show Cell where
 
 type Column = [Cell]
 type Grid   = [Column]
+type Summary = [(Cell, Int)]
 
 showGrid:: Grid -> String
 showGrid g = unlines $ map (concatMap show) (transpose g)
@@ -28,10 +29,14 @@ play::Color->Int->Grid->Grid
 play color numCol g = let (prev,nexts) = splitAt numCol g in
                         prev ++ [addToken color (head nexts)] ++ (tail nexts)
 
-summarize::Column->[(Cell,Int)]
+summarize::Column->Summary
 summarize []  = []
 summarize col = let (firsts,lasts) = span (==(head col)) col in
                   (head col, length firsts) : summarize lasts
+
+summarizeGrid::Grid->Summary
+summarizeGrid grid = concatMap (\f -> concatMap summarize (f grid))
+                      [getDiagonals, getDiagonals.(map reverse), id, transpose]
 
 size:: Grid -> (Int, Int)
 size g = (length g, length $ head g)
@@ -44,22 +49,20 @@ getDiagonal grid numDiag = [grid!!i!!j |
 getDiagonals:: Grid->Grid
 getDiagonals grid = takeWhile (not.null) (map (getDiagonal grid) [0..])
 
-columnWon:: Column -> Maybe Color
-columnWon = listToMaybe.
+won:: Grid -> Maybe Color
+won = listToMaybe.
             (map (\(Full x,n) -> x)).
             (filter (\(v,num) -> v/=Empty && num>=wonAt)).
-            summarize
-
-won:: Grid->Maybe Color
-won grid = listToMaybe $ catMaybes $
-          concatMap (\f -> map columnWon (f grid))
-                    [getDiagonals, getDiagonals.(map reverse), id, transpose]
+            summarizeGrid
 
 legalMoves::Grid -> [Int]
 legalMoves g = map fst (filter ((==Empty).head.snd) (zip [0..] g))
+
+--evaluate:: Grid -> Int
+
 
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
 
 main = let playr0 = play Red 2 in
-          print $ legalMoves $ (foldr (.) id (replicate 5 playr0)) initial
+          print $ won $ (foldr (.) id (replicate 5 playr0)) initial
