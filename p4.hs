@@ -1,6 +1,7 @@
 import Data.List
 import Data.Maybe
 import Data.Function
+import System.IO
 
 wonAt = 4
 
@@ -88,6 +89,19 @@ negaMax color depthMax depth grid =
 
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
+
+-- Un joueur générique
+class Contestant a where
+  move :: a -> Grid -> IO Int -- donner un coup à jouer
+  color :: a -> Color         -- donner sa couleur
+
+data Human = Human Color
+data Computer = Computer Color
+
+instance Contestant Computer where
+  move comp grid = return$snd$negaMax Red 0 5 grid
+  color comp = Red
+
 
 main = let playr0 = play Red 2 in
           print $ evaluate $ (foldr (.) id (replicate 5 playr0)) initial
