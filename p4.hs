@@ -21,10 +21,16 @@ addToken:: Color -> Column -> Column
 addToken color column = let (empties,fulls) = span (==Empty) column in
                           tail (empties ++ [Full color] ++ fulls) 
 
---play::Grid->Color->Int->Grid
---play g color numCol = zip 
+play::Grid->Color->Int->Grid
+play g color numCol = let (prev,nexts) = splitAt numCol g in
+                        prev ++ [addToken color (head nexts)] ++ (tail nexts)
+
+summarize::Column->[(Cell,Int)]
+summarize []  = []
+summarize col = let (firsts,lasts) = span (==(head col)) col in
+                  (head col, length firsts) : summarize lasts
 
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
 
-main = putStr $ showGrid $ map (addToken Red) initial
+main = print $ summarize $ head $ play initial Red 0
