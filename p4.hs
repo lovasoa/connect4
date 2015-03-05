@@ -115,5 +115,15 @@ instance Contestant Human where
 
   color (Human col) = col
 
+
+loop::(Contestant a,Contestant b)=>Grid->a->b->IO()
+loop grid a b = do
+  amove <- move a grid
+  let newgrid = play (color a) amove grid in do
+    putStrLn $ showGrid grid
+    case won grid of
+      Just color -> putStrLn (show color ++ "won !")
+      Nothing    -> loop grid b a
+
 main = let playr0 = play Red 2 in
           print $ evaluate $ (foldr (.) id (replicate 5 playr0)) initial
