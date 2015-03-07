@@ -52,6 +52,11 @@ summarizeGrid::Grid->Summary
 summarizeGrid grid = concatMap (\f -> concatMap summarize (f grid))
                       [getDiagonals, getDiagonals.(map reverse), id, transpose]
 
+-- Get the lines, columns and diagonals of a grid
+allAlignments::Grid->[Column]
+allAlignments grid = concatMap ($ grid)
+                      [getDiagonals, getDiagonals.(map reverse), id, transpose]
+
 size:: Grid -> (Int, Int)
 size g = (length g, length $ head g)
 
@@ -74,12 +79,26 @@ legalMoves g = map fst (filter ((==Empty).head.snd) (zip [0..] g))
 
 -- Evaluates how advantageous the grid is for the Red player
 evaluate:: Grid -> Int
-evaluate = sum.(map (\(c,num) -> 
-                10 ^ num * case c of
-                  Full Red -> 1
-                  Full Orange -> -1
-                  Empty -> 0
-            )).summarizeGrid
+evaluate = sum.(map evaluateColumn).allAlignments
+
+evaluateColumn:: Column -> Int
+evaluateColumn col
+      | length col >= 4 = (evaluate4 $ take 4 col) + (evaluateColumn $ tail col)
+      | otherwise = 0
+
+-- Evaluates how profitable a set of 4 cells is for the Red
+evaluate4::[Cell]->Int
+evaluate4 cells = case evaluate4orLess cells Nothing 0 of
+                      (Nothing, _) -> 0
+                      (Just c, s) -> 10^s * if c==Red then 1 else -1
+
+evaluate4orLess::[Cell]->(Maybe Color)->Int->(Maybe Color, Int)
+evaluate4orLess (Full cellColor:cells) color curSum
+  | color == Just cellColor || color == Nothing
+    = evaluate4orLess cells (Just cellColor) (curSum+1)
+evaluate4orLess (Empty:cells) color curSum = evaluate4orLess cells color curSum
+evaluate4orLess [] color sum = (color, sum)
+evaluate4orLess _ _ _ = (Nothing, 0) -- There are two different colors in the 4 cells
 
 -- Returns a tuple.
 --  - The first element represents a move (0-6)
@@ -99,7 +118,7 @@ negaMax color depth grid =
                           (\m -> (m, -(snd$negaMax nextCol (depth-1) (playit m))))
                           (legalMoves grid))
 aimove::Color->Grid->Int
-aimove color grid = fst $ negaMax color 4 grid
+aimove color grid = fst $ negaMax color 5 grid
 
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
@@ -148,5 +167,6 @@ main = do
   hSetBuffering stdin NoBuffering
   -- désactive l'écho du caractère entré sur le terminal
   hSetEcho stdin False
+  print $ evaluateColumn [Full Red, Empty, Empty, Full Red, Empty, Empty, Full Orange]
   -- lance la REPL
   loop initial ( Human Orange ) ( Computer Red )
