@@ -12,8 +12,8 @@ data Color = Red | Orange deriving (Eq)
 data Cell  = Empty | Full(Color) deriving (Eq)
 
 instance Show Color where
-  show Red = " 🌑 "
-  show Orange = " 🌕 "
+  show Red = " ◉ "
+  show Orange = " ◎ "
 
 instance Show Cell where
   show Empty   = " ⬜ "
@@ -61,7 +61,7 @@ getDiagonal grid numDiag = [grid!!i!!j |
                               i+j==numDiag]
 
 getDiagonals:: Grid->Grid
-getDiagonals grid = takeWhile (not.null) (map (getDiagonal grid) [0..])
+getDiagonals grid = (takeWhile (not.null) (map (getDiagonal grid) [0..]))
 
 won:: Grid -> Maybe Color
 won = listToMaybe.
@@ -72,29 +72,34 @@ won = listToMaybe.
 legalMoves::Grid -> [Int]
 legalMoves g = map fst (filter ((==Empty).head.snd) (zip [0..] g))
 
+-- Evaluates how advantageous the grid is for the Red player
 evaluate:: Grid -> Int
 evaluate = sum.(map (\(c,num) -> 
-                100 ^ num * case c of
+                10 ^ num * case c of
                   Full Red -> 1
                   Full Orange -> -1
                   Empty -> 0
             )).summarizeGrid
 
-negaMax::Color->Int->Int->Grid -> Int
-negaMax color d dmax grid | dmax == d || (isJust $ won grid) =
-  (if color==Red then 1 else -1) * (evaluate grid)
+-- Returns a tuple.
+--  - The first element represents a move (0-6)
+--  - The second represents how advantageous that move is for the given color
+--  depth represents the number of moves to foresee
+negaMax::Color->Int->Grid -> (Int, Int)
+negaMax color depth grid | depth == 0 || (isJust $ won grid) =
+  let evaluation = (if color==Red then 1 else -1) * (evaluate grid) in
+    (0, evaluation)
 
-negaMax color d dmax grid =
+negaMax color depth grid =
   let nextCol = otherColor color
       playit  = flip (play color) grid
   in
-    maximum (map ((0-).(negaMax nextCol (d+1) dmax).playit) (legalMoves grid))
-
+    maximumBy (compare `on` snd)
+                        (map
+                          (\m -> (m, -(snd$negaMax nextCol (depth-1) (playit m))))
+                          (legalMoves grid))
 aimove::Color->Grid->Int
-aimove color grid = fst $ maximumBy (compare `on` snd)
-                            (map
-                              (\m -> (m, -(negaMax (otherColor color) 0 4 (play color m grid))))
-                              (legalMoves grid))
+aimove color grid = fst $ negaMax color 4 grid
 
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
