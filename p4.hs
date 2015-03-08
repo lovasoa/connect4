@@ -83,7 +83,7 @@ evaluate = sum.(map evaluateColumn).allAlignments
 
 evaluateColumn:: Column -> Int
 evaluateColumn col
-      | length col >= 4 = (evaluate4 $ take 4 col) + (evaluateColumn $ tail col)
+      | length col >= wonAt = (evaluate4 $ take wonAt col) + (evaluateColumn $ tail col)
       | otherwise = 0
 
 -- Evaluates how profitable a set of 4 cells is for the Red
