@@ -7,7 +7,7 @@ import System.IO
 import Debug.Trace
 
 wonAt = 4
-maxDepth = 7
+maxDepth = 8
 
 data Color = Red | Orange deriving (Eq)
 data Cell  = Empty | Full(Color) deriving (Eq)
@@ -113,7 +113,12 @@ negaMaxAB color depth (a,b) grid =
                 newa = max a neg
             in
             ( (newa,b),
-              if neg>beval then (m,neg) else (bmove,beval)
+              -- if several moves give the same evaluation function, then
+              -- play the move that is the closest to the center of the grid
+              if neg>beval || (neg==beval && (abs (m-3))<(abs (bmove-3))) then
+                (m,neg)
+              else
+                (bmove,beval)
             )
         )
         ((a,b), (0,a))
