@@ -2,12 +2,12 @@ import Data.List
 import Data.Maybe
 import Data.Function
 import Data.Char
+import qualified Data.Map as Map
 import System.IO
 
 import Debug.Trace
 
 wonAt = 4
-maxDepth = 7
 
 data Color = Red | Orange deriving (Eq)
 data Cell  = Empty | Full(Color) deriving (Eq)
@@ -53,11 +53,13 @@ allAlignments grid = concatMap ($ grid)
                       [getDiagonals, getDiagonals.(map reverse), id, transpose]
 
 getDiagonals:: Grid->[Column]
-getDiagonals grid = takeWhile (not.null) $ map catMaybes $ transpose $
-                      map
-                        (\(l,n)->
-                          (replicate n Nothing)++(map (Just) l)++(repeat Nothing))
-                        (zip grid [0..])
+getDiagonals grid = Map.elems $
+                      foldr (\(n,c) mm ->
+                                foldr (\(l,v) mm ->
+                                    Map.adjust (v:) (n+l) mm) mm (zip [0..] c)
+                            )
+                            (Map.fromList $ zip [0..(length grid)+(length $head grid)] (repeat []))
+                            (zip [0..] grid)
 
 -- Returns the color of the winner, or Nothing if there is none
 won:: Grid -> Maybe Color
@@ -127,8 +129,8 @@ negaMaxAB color depth (a,b) grid =
         ((a,b), (0,-10^8))
         (legalMoves grid)
 
-aimove::Color->Grid->Int
-aimove color grid = fst $ negaMaxAB color maxDepth (-10^5,10^5) grid
+aimove::Int->Color->Grid->Int
+aimove maxDepth color grid = fst $ negaMaxAB color maxDepth (-10^5,10^5) grid
 
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
@@ -139,11 +141,11 @@ class Contestant a where
   color :: a -> Color         -- donner sa couleur
 
 data Human = Human Color
-data Computer = Computer Color
+data Computer = Computer Color Int
 
 instance Contestant Computer where
-  move  (Computer col) grid = return$aimove col grid
-  color (Computer col) = col
+  move  (Computer col difficulty) grid = return$aimove difficulty col grid
+  color (Computer col _) = col
 
 instance Contestant Human where
   move hum grid = do
@@ -178,4 +180,4 @@ main = do
   -- désactive l'écho du caractère entré sur le terminal
   hSetEcho stdin False
   -- lance la REPL
-  loop initial ( Human Orange ) ( Computer Red )
+  loop initial (Computer Orange 7) (Computer Red 7)
