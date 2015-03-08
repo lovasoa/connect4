@@ -7,6 +7,7 @@ import System.IO
 import Debug.Trace
 
 wonAt = 4
+maxDepth = 7
 
 data Color = Red | Orange deriving (Eq)
 data Cell  = Empty | Full(Color) deriving (Eq)
@@ -43,15 +44,6 @@ play::Color->Int->Grid->Grid
 play color numCol g = let (prev,nexts) = splitAt numCol g in
                         prev ++ [addToken color (head nexts)] ++ (tail nexts)
 
-summarize::Column->Summary
-summarize []  = []
-summarize col = let (firsts,lasts) = span (==(head col)) col in
-                  (head col, length firsts) : summarize lasts
-
-summarizeGrid::Grid->Summary
-summarizeGrid grid = concatMap (\f -> concatMap summarize (f grid))
-                      [getDiagonals, getDiagonals.(map reverse), id, transpose]
-
 -- Get the lines, columns and diagonals of a grid
 allAlignments::Grid->[Column]
 allAlignments grid = concatMap ($ grid)
@@ -68,11 +60,15 @@ getDiagonal grid numDiag = [grid!!i!!j |
 getDiagonals:: Grid->Grid
 getDiagonals grid = (takeWhile (not.null) (map (getDiagonal grid) [0..]))
 
+wonCol:: Column -> Color -> Bool
+wonCol [] _ = False
+wonCol column color = ((>=wonAt) $ length $ takeWhile (==Full color) column)
+                        || (wonCol (tail column) color)
+
 won:: Grid -> Maybe Color
-won = listToMaybe.
-            (map (\(Full x,n) -> x)).
-            (filter (\(v,num) -> v/=Empty && num>=wonAt)).
-            summarizeGrid
+won grid = let colorWon = or.sequence (map wonCol (allAlignments grid)) in
+            listToMaybe $ filter (colorWon) [Red, Orange]
+
 
 legalMoves::Grid -> [Int]
 legalMoves g = map fst (filter ((==Empty).head.snd) (zip [0..] g))
@@ -127,7 +123,7 @@ negaMaxAB color depth (a,b) grid =
         (legalMoves grid)
 
 aimove::Color->Grid->Int
-aimove color grid = fst $ negaMaxAB color 7 (-10^5,10^5) grid
+aimove color grid = fst $ negaMaxAB color maxDepth (-10^5,10^5) grid
 
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
@@ -177,4 +173,4 @@ main = do
   -- désactive l'écho du caractère entré sur le terminal
   hSetEcho stdin False
   -- lance la REPL
-  loop initial ( Human Orange ) ( Computer Red )
+  loop initial ( Computer Orange ) ( Computer Red )
