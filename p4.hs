@@ -77,12 +77,12 @@ legalMoves g = map fst (filter ((==Empty).head.snd) (zip [0..] g))
 
 -- Evaluates how advantageous the grid is for the Red player
 evaluate:: Grid -> Int
-evaluate = sum.(map evaluateColumn).allAlignments
+evaluate = sum.(map $ evaluateColumn 0).allAlignments
 
-evaluateColumn:: Column -> Int
-evaluateColumn col
-      | length col >= wonAt = (evaluate4 $ take wonAt col) + (evaluateColumn $ tail col)
-      | otherwise = 0
+evaluateColumn:: Int -> Column -> Int
+evaluateColumn s col
+      | length col >= wonAt = evaluateColumn (s + (evaluate4 $ take wonAt col)) (tail col)
+      | otherwise = s
 
 -- Evaluates how profitable a set of 4 cells is for the Red
 evaluate4::[Cell]->Int
