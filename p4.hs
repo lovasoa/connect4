@@ -60,14 +60,15 @@ getDiagonal grid numDiag = [grid!!i!!j |
 getDiagonals:: Grid->Grid
 getDiagonals grid = (takeWhile (not.null) (map (getDiagonal grid) [0..]))
 
+-- Returns the color of the winner, or Nothing if there is none
+won:: Grid -> Maybe Color
+won grid = let colorWon = or.sequence (map wonCol (allAlignments grid)) in
+            listToMaybe $ filter (colorWon) [Red, Orange]
+
 wonCol:: Column -> Color -> Bool
 wonCol [] _ = False
 wonCol column color = ((>=wonAt) $ length $ takeWhile (==Full color) column)
                         || (wonCol (tail column) color)
-
-won:: Grid -> Maybe Color
-won grid = let colorWon = or.sequence (map wonCol (allAlignments grid)) in
-            listToMaybe $ filter (colorWon) [Red, Orange]
 
 
 legalMoves::Grid -> [Int]
