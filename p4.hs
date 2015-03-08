@@ -49,16 +49,12 @@ allAlignments::Grid->[Column]
 allAlignments grid = concatMap ($ grid)
                       [getDiagonals, getDiagonals.(map reverse), id, transpose]
 
-size:: Grid -> (Int, Int)
-size g = (length g, length $ head g)
-
-getDiagonal::Grid->Int->Column
-getDiagonal grid numDiag = [grid!!i!!j |
-                              i<-[0..(fst$size grid)-1], j<-[0..(snd$size grid)-1],
-                              i+j==numDiag]
-
-getDiagonals:: Grid->Grid
-getDiagonals grid = (takeWhile (not.null) (map (getDiagonal grid) [0..]))
+getDiagonals:: Grid->[Column]
+getDiagonals grid = takeWhile (not.null) $ map catMaybes $ transpose $
+                      map
+                        (\(l,n)->
+                          (replicate n Nothing)++(map (Just) l)++(repeat Nothing))
+                        (zip grid [0..])
 
 -- Returns the color of the winner, or Nothing if there is none
 won:: Grid -> Maybe Color
