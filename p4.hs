@@ -100,25 +100,34 @@ evaluate4orLess (Empty:cells) color curSum = evaluate4orLess cells color curSum
 evaluate4orLess [] color sum = (color, sum)
 evaluate4orLess _ _ _ = (Nothing, 0) -- There are two different colors in the 4 cells
 
+-- Negamax, with alpha-beta pruning
 -- Returns a tuple.
 --  - The first element represents a move (0-6)
 --  - The second represents how advantageous that move is for the given color
 --  depth represents the number of moves to foresee
-negaMax::Color->Int->Grid -> (Int, Int)
-negaMax color depth grid | depth == 0 || (isJust $ won grid) =
+negaMaxAB::Color->Int->(Int, Int)->Grid -> (Int, Int)
+negaMaxAB color depth _ grid | depth == 0 || (isJust $ won grid) =
   let evaluation = (if color==Red then 1 else -1) * (evaluate grid) in
     (0, evaluation)
-
-negaMax color depth grid =
+negaMaxAB color depth (a,b) grid =
   let nextCol = otherColor color
       playit  = flip (play color) grid
   in
-    maximumBy (compare `on` snd)
-                        (map
-                          (\m -> (m, -(snd$negaMax nextCol (depth-1) (playit m))))
-                          (legalMoves grid))
+    snd$foldr
+        (\m ((a,b),(bmove,beval)) -> 
+            if a>=b then ((a,b),(bmove,beval)) else
+            let neg  = -(snd$negaMaxAB nextCol (depth-1) (-b,-a) (playit m))
+                newa = max a neg
+            in
+            ( (newa,b),
+              if neg>beval then (m,neg) else (bmove,beval)
+            )
+        )
+        ((a,b), (0,a))
+        (legalMoves grid)
+
 aimove::Color->Grid->Int
-aimove color grid = fst $ negaMax color 5 grid
+aimove color grid = fst $ negaMaxAB color 7 (-10^5,10^5) grid
 
 initial::Grid
 initial = replicate 7 (replicate 6 Empty)
@@ -167,6 +176,5 @@ main = do
   hSetBuffering stdin NoBuffering
   -- désactive l'écho du caractère entré sur le terminal
   hSetEcho stdin False
-  print $ evaluateColumn [Full Red, Empty, Empty, Full Red, Empty, Empty, Full Orange]
   -- lance la REPL
   loop initial ( Human Orange ) ( Computer Red )
