@@ -7,7 +7,7 @@ import System.IO
 import Debug.Trace
 
 wonAt = 4
-maxDepth = 8
+maxDepth = 7
 
 data Color = Red | Orange deriving (Eq)
 data Cell  = Empty | Full(Color) deriving (Eq)
@@ -27,6 +27,9 @@ type Summary = [(Cell, Int)]
 otherColor:: Color -> Color
 otherColor Red = Orange
 otherColor Orange = Red
+
+redFactor:: Color->Int
+redFactor c = if c==Red then 1 else -1
 
 showGrid:: Grid -> String
 showGrid g = unlines $ (map (concatMap show) (transpose g) ++ [showColNums g])
@@ -83,7 +86,7 @@ evaluateColumn col
 evaluate4::[Cell]->Int
 evaluate4 cells = case evaluate4orLess cells Nothing 0 of
                       (Nothing, _) -> 0
-                      (Just c, s) -> 10^s * if c==Red then 1 else -1
+                      (Just c, s) -> 10^s * redFactor c
 
 evaluate4orLess::[Cell]->(Maybe Color)->Int->(Maybe Color, Int)
 evaluate4orLess (Full cellColor:cells) color curSum
@@ -100,8 +103,8 @@ evaluate4orLess _ _ _ = (Nothing, 0) -- There are two different colors in the 4 
 --  depth represents the number of moves to foresee
 negaMaxAB::Color->Int->(Int, Int)->Grid -> (Int, Int)
 negaMaxAB color depth _ grid | depth == 0 || (isJust $ won grid) =
-  let evaluation = (if color==Red then 1 else -1) * (evaluate grid) in
-    (0, evaluation)
+  (0, (redFactor color) * (evaluate grid) * (depth+1))
+
 negaMaxAB color depth (a,b) grid =
   let nextCol = otherColor color
       playit  = flip (play color) grid
@@ -115,13 +118,13 @@ negaMaxAB color depth (a,b) grid =
             ( (newa,b),
               -- if several moves give the same evaluation function, then
               -- play the move that is the closest to the center of the grid
-              if neg>beval || (neg==beval && (abs (m-3))<(abs (bmove-3))) then
+              if neg>beval || (neg==beval && abs (m-3) < abs (bmove-3)) then
                 (m,neg)
               else
                 (bmove,beval)
             )
         )
-        ((a,b), (0,a))
+        ((a,b), (0,-10^8))
         (legalMoves grid)
 
 aimove::Color->Grid->Int
@@ -175,4 +178,4 @@ main = do
   -- désactive l'écho du caractère entré sur le terminal
   hSetEcho stdin False
   -- lance la REPL
-  loop initial ( Computer Orange ) ( Computer Red )
+  loop initial ( Human Orange ) ( Computer Red )
