@@ -63,14 +63,12 @@ getDiagonals grid = Map.elems $
 
 -- Returns the color of the winner, or Nothing if there is none
 won:: Grid -> Maybe Color
-won grid = let colorWon = or.sequence (map wonCol (allAlignments grid)) in
-            listToMaybe $ filter (colorWon) [Red, Orange]
+won = listToMaybe.catMaybes.(map wonCol).allAlignments
 
-wonCol:: Column -> Color -> Bool
-wonCol [] _ = False
-wonCol column color = ((>=wonAt) $ length $ takeWhile (==Full color) column)
-                        || (wonCol (tail column) color)
-
+wonCol:: Column -> Maybe Color
+wonCol col | length col < wonAt = Nothing
+wonCol (c:cs) | c==Empty || (or$map (/=c)$take (wonAt-1) cs) = wonCol cs
+wonCol (Full c:_) = Just c
 
 legalMoves::Grid -> [Int]
 legalMoves g = map fst (filter ((==Empty).head.snd) (zip [0..] g))
